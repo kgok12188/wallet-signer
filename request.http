@@ -1,0 +1,68 @@
+### POST 获取eth 地址
+POST http://127.0.0.1:8080/eth/getAddress
+
+###
+
+
+### POST 获取tron 地址
+POST http://127.0.0.1:8080/tron/getAddress
+
+###
+
+### POST 获取tron 地址
+POST http://127.0.0.1:8080/sol/getAddress
+
+###
+
+
+
+type SignParams struct {
+	Blockhash    string        `json:"blockhash"`
+	FeePayer     string        `json:"feePayer"`
+	Instructions []Instruction `json:"instructions"`
+}
+
+type Instruction struct {
+	From             string `json:"from"`
+	To               string `json:"to"`
+	Amount           uint64 `json:"amount"`
+	Mint             string `json:"mint"` // 合约地址
+	Decimals         uint8  `json:"decimals"`
+	InitTokenAccount bool   `json:"initTokenAccount"`
+}
+### 主币
+POST http://127.0.0.1:8080/sol/sign
+content-type: application/json
+
+{
+  "blockhash": "BmnnvwkXtZPoq1WZgSYf41cPaWZtEL3H4ntNkjau1QP",
+  "feePayer": "7bkJxfnVAyLZr9ndTPJ7MGvrgLRf6mTh6m2HMjB8DLBY",
+  "instructions": [
+    {
+      "from": "7bkJxfnVAyLZr9ndTPJ7MGvrgLRf6mTh6m2HMjB8DLBY",
+      "to": "EWkEgUGWi1DUf77UtBk2MKBJa8VzsiLshRzsWUrw7dMY",
+      "amount": 10000000
+    }
+  ],
+  "mint": ""
+}
+###
+### 从币
+POST http://127.0.0.1:8080/sol/sign
+content-type: application/json
+
+{
+  "blockhash": "BueGZysvU7h2f9ezrFdZtmAGGm8ARPgF1skVDuyk7LNM",
+  "feePayer": "7bkJxfnVAyLZr9ndTPJ7MGvrgLRf6mTh6m2HMjB8DLBY",
+  "instructions": [
+    {
+      "from": "7bkJxfnVAyLZr9ndTPJ7MGvrgLRf6mTh6m2HMjB8DLBY",
+      "to": "EWkEgUGWi1DUf77UtBk2MKBJa8VzsiLshRzsWUrw7dMY",
+      "mint": "7kMRdbsnUbpyrTPoJ13hVopnSotm9uC8bLpTUk4H9Qsk",
+      "amount": 1000000000,
+      "decimals": 9,
+      "initTokenAccount": true
+    }
+  ]
+}
+###

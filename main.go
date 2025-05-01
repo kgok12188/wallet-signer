@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"wallet-signer/chains/eth"
+	"wallet-signer/chains/sol"
 	"wallet-signer/chains/tron"
 )
 
@@ -17,6 +18,8 @@ func main() {
 	r.POST("/eth/sign", eth.SignTx)
 	r.POST("/tron/getAddress", tron.GetAddress)
 	r.POST("/tron/sign", tron.SignTx)
+	r.POST("/sol/getAddress", sol.GetAddress)
+	r.POST("/sol/sign", sol.SignTx)
 	err := r.Run(":8080")
 	if err != nil {
 		panic(err)
