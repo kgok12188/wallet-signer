@@ -1,14 +1,11 @@
 package sol
 
 import (
-	sContext "context"
 	"encoding/base64"
-	"github.com/blocto/solana-go-sdk/client"
 	"github.com/blocto/solana-go-sdk/common"
 	"github.com/blocto/solana-go-sdk/program/associated_token_account"
 	"github.com/blocto/solana-go-sdk/program/system"
 	"github.com/blocto/solana-go-sdk/program/token"
-	"github.com/blocto/solana-go-sdk/rpc"
 	"github.com/blocto/solana-go-sdk/types"
 	"github.com/gin-gonic/gin"
 	"github.com/mr-tron/base58"
@@ -145,7 +142,7 @@ func SignTx(context *gin.Context) {
 		signers = append(signers, *value)
 	}
 
-	c := client.NewClient(rpc.DevnetRPCEndpoint)
+	//c := client.NewClient(rpc.DevnetRPCEndpoint)
 	// blockhash, err := c.GetLatestBlockhash(sContext.Background())
 
 	tx, err := types.NewTransaction(types.NewTransactionParam{
@@ -173,15 +170,15 @@ func SignTx(context *gin.Context) {
 		"hash":  hash,
 		"rawTx": base64.StdEncoding.EncodeToString(rawTx),
 	})
-
-	_, err = c.SendTransaction(sContext.Background(), tx)
-
-	if err != nil {
-		log.Println("failed to send tx, err:", err, hash)
-		return
-	}
-
-	log.Println("send tx success, hash:", hash, params.Blockhash)
+	//
+	//_, err = c.SendTransaction(sContext.Background(), tx)
+	//
+	//if err != nil {
+	//	log.Println("failed to send tx, err:", err, hash)
+	//	return
+	//}
+	//
+	//log.Println("send tx success, hash:", hash, params.Blockhash)
 }
 
 type SignParams struct {
