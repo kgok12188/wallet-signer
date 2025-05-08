@@ -12,24 +12,6 @@ POST http://127.0.0.1:8080/tron/getAddress
 ### POST 获取tron 地址
 POST http://127.0.0.1:8080/sol/getAddress
 
-###
-
-
-
-type SignParams struct {
-	Blockhash    string        `json:"blockhash"`
-	FeePayer     string        `json:"feePayer"`
-	Instructions []Instruction `json:"instructions"`
-}
-
-type Instruction struct {
-	From             string `json:"from"`
-	To               string `json:"to"`
-	Amount           uint64 `json:"amount"`
-	Mint             string `json:"mint"` // 合约地址
-	Decimals         uint8  `json:"decimals"`
-	InitTokenAccount bool   `json:"initTokenAccount"`
-}
 ### 主币
 POST http://127.0.0.1:8080/sol/sign
 content-type: application/json
@@ -43,8 +25,7 @@ content-type: application/json
       "to": "EWkEgUGWi1DUf77UtBk2MKBJa8VzsiLshRzsWUrw7dMY",
       "amount": 10000000
     }
-  ],
-  "mint": ""
+  ]
 }
 ###
 ### 从币
@@ -66,3 +47,9 @@ content-type: application/json
   ]
 }
 ###
+
+
+POST http://127.0.0.1:8080/sol/sign
+content-type: application/json
+
+{"instructions":[{"amount":"1","from":"8obrdSpZoaqV4X7gUgxXAgWM5LbBTWNXqLyzaVM3VgF6","to":"7bmX7qkRtUePN5X9d5z4TzrSGrBKvmWspDMLXg72dd93"}],"blockhash":"8ay91iQQhpHVa1ev8Z2B1jx7Rq341b3i8P3vkxPUpPgy","feePayer":"8obrdSpZoaqV4X7gUgxXAgWM5LbBTWNXqLyzaVM3VgF6"}

@@ -2,6 +2,7 @@ package sol
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"github.com/blocto/solana-go-sdk/common"
 	"github.com/blocto/solana-go-sdk/program/associated_token_account"
 	"github.com/blocto/solana-go-sdk/program/system"
@@ -10,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mr-tron/base58"
 	"log"
+	"strconv"
 	"wallet-signer/models"
 )
 
@@ -35,6 +37,7 @@ func SignTx(context *gin.Context) {
 	params := SignParams{}
 	err := context.BindJSON(&params)
 	if err != nil {
+		log.Println("SignTx", err)
 		context.JSON(400, gin.H{})
 		return
 	}
@@ -45,7 +48,13 @@ func SignTx(context *gin.Context) {
 	var Instructions []types.Instruction
 	var fromAccounts = make(map[string]*types.Account)
 	for _, instruction := range params.Instructions {
-		if instruction.From == "" || instruction.To == "" || instruction.Amount <= 0 {
+		amount, err := strconv.ParseUint(instruction.Amount.String(), 10, 64)
+		if err != nil {
+			log.Println("金额错误", err)
+			context.JSON(400, gin.H{})
+			return
+		}
+		if instruction.From == "" || instruction.To == "" || amount <= 0 {
 			context.JSON(400, gin.H{})
 			return
 		}
@@ -57,7 +66,7 @@ func SignTx(context *gin.Context) {
 		dbAddress := models.Address{
 			Addr: instruction.From,
 		}
-		err := models.GetOneAddress(&dbAddress, dbAddress.Addr, "SOL")
+		err = models.GetOneAddress(&dbAddress, dbAddress.Addr, "SOL")
 		if err != nil {
 			context.JSON(400, gin.H{})
 			return
@@ -75,35 +84,32 @@ func SignTx(context *gin.Context) {
 		}
 
 		fromAccounts[instruction.From] = &fromAccount
-
 		if instruction.Mint == "" {
 			Instructions = append(Instructions, system.Transfer(system.TransferParam{
 				From:   fromAccount.PublicKey,
 				To:     common.PublicKeyFromString(instruction.To),
-				Amount: instruction.Amount,
+				Amount: amount,
 			}))
 		} else {
 			mintPublicKey := common.PublicKeyFromString(instruction.Mint)
 			toAddress := common.PublicKeyFromString(instruction.To)
-			ataFrom, _, err := common.FindAssociatedTokenAddress(fromAccount.PublicKey, mintPublicKey)
-			if err != nil { // 没有创建
-				context.JSON(400, gin.H{})
-				log.Fatal("get_ataFrom_account, err: ", toAddress, mintPublicKey.String(), err)
-				return
-			}
-			ataTo, _, err := common.FindAssociatedTokenAddress(toAddress, mintPublicKey)
-			if err != nil { // 没有创建
-				context.JSON(400, gin.H{})
-				log.Fatal("get_ataTo_account, err: ", toAddress, mintPublicKey.String(), err)
-				return
-			}
-			if instruction.InitTokenAccount {
+			ataFrom := common.PublicKeyFromString(instruction.AtaFrom)
+			var ataTo common.PublicKey
+			if instruction.AtaTo == "" {
+				ataTo, _, err = common.FindAssociatedTokenAddress(toAddress, mintPublicKey)
+				if err != nil { // 没有创建
+					context.JSON(400, gin.H{})
+					log.Fatal("get_ataTo_account, err: ", toAddress, mintPublicKey.String(), err)
+					return
+				}
 				Instructions = append(Instructions, associated_token_account.Create(associated_token_account.CreateParam{
 					Funder:                 fromAccount.PublicKey,
 					Owner:                  toAddress,
 					Mint:                   mintPublicKey,
 					AssociatedTokenAccount: ataTo,
 				}))
+			} else {
+				ataTo = common.PublicKeyFromString(instruction.AtaTo)
 			}
 			Instructions = append(Instructions, token.TransferChecked(token.TransferCheckedParam{
 				From:     ataFrom,
@@ -111,7 +117,7 @@ func SignTx(context *gin.Context) {
 				Mint:     mintPublicKey,
 				Auth:     fromAccount.PublicKey,
 				Signers:  []common.PublicKey{},
-				Amount:   instruction.Amount,
+				Amount:   amount,
 				Decimals: instruction.Decimals,
 			}))
 		}
@@ -141,10 +147,6 @@ func SignTx(context *gin.Context) {
 	for _, value := range fromAccounts {
 		signers = append(signers, *value)
 	}
-
-	//c := client.NewClient(rpc.DevnetRPCEndpoint)
-	// blockhash, err := c.GetLatestBlockhash(sContext.Background())
-
 	tx, err := types.NewTransaction(types.NewTransactionParam{
 		Message: types.NewMessage(types.NewMessageParam{
 			FeePayer:        feeAccount.PublicKey,
@@ -170,12 +172,11 @@ func SignTx(context *gin.Context) {
 		"hash":  hash,
 		"rawTx": base64.StdEncoding.EncodeToString(rawTx),
 	})
-	//
+
+	//c := client.NewClient(rpc.DevnetRPCEndpoint)
 	//_, err = c.SendTransaction(sContext.Background(), tx)
-	//
 	//if err != nil {
-	//	log.Println("failed to send tx, err:", err, hash)
-	//	return
+	//	log.Fatal("failed to send tx, err:", err, hash)
 	//}
 	//
 	//log.Println("send tx success, hash:", hash, params.Blockhash)
@@ -188,10 +189,11 @@ type SignParams struct {
 }
 
 type Instruction struct {
-	From             string `json:"from"`
-	To               string `json:"to"`
-	Amount           uint64 `json:"amount"`
-	Mint             string `json:"mint"` // 合约地址
-	Decimals         uint8  `json:"decimals"`
-	InitTokenAccount bool   `json:"initTokenAccount"`
+	From     string      `json:"from"`
+	To       string      `json:"to"`
+	AtaFrom  string      `json:"ataFrom"`
+	AtaTo    string      `json:"ataTo"`
+	Amount   json.Number `json:"amount"`
+	Mint     string      `json:"mint"` // 合约地址
+	Decimals uint8       `json:"decimals"`
 }
